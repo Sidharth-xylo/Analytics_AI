@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 31, 45, 61;
+  /* #1F2D3D */
+  --background-start-rgb: 249, 252, 253;
+  /* #F9FCFD */
+  --background-end-rgb: 249, 252, 253;
+  /* #F9FCFD */
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #FFFFFF;
+  /* Light App Background */
+  min-height: 100vh;
+}

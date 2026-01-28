@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+.env
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Logs
+pandasai.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database & Uploads
+backend/database.db
+backend/database_v2.db
+backend/uploads/
+*.sqlite3
+
+# OS
+.DS_Store
+Thumbs.db

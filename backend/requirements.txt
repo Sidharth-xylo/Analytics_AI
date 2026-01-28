@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pandas
+pandasai
+pandasai-openai
+python-multipart
+openai
+python-dotenv
+sqlmodel
+passlib[bcrypt]
+python-jose[cryptography]
