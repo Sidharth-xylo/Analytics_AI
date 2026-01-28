@@ -148,42 +148,52 @@ export default function DecorativeBackground() {
                 style={{ perspective: '1000px' }}
             >
                 <div className="relative w-full h-full" style={{
-                    transform: 'rotateY(-15deg) rotateX(10deg)',
+                    transform: 'rotateY(-10deg) rotateX(5deg)',
                     transformStyle: 'preserve-3d'
                 }}>
-                    <div className="absolute inset-0 bg-brand-card/40 backdrop-blur-md border border-brand-border/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.5)] p-4">
-                        <div className="h-full w-full flex items-end justify-between gap-2 pb-2 relative" style={{ transform: 'translateZ(20px)' }}>
-                            {[40, 70, 50, 90, 60, 80].map((height, i) => (
-                                <div key={i} className="relative w-full" style={{ transform: 'translateZ(10px)' }}>
-                                    {/* 3D Bar with depth */}
-                                    <div className="relative w-full rounded-t-md"
-                                        style={{
-                                            height: `${height}%`,
-                                            background: `linear-gradient(135deg, ${i % 2 === 0 ? '#4F6BFF' : '#22D3EE'}dd 0%, ${i % 2 === 0 ? '#4F6BFF' : '#22D3EE'}66 100%)`,
-                                            boxShadow: `
-                                                0 4px 20px rgba(${i % 2 === 0 ? '79,107,255' : '34,211,238'}, 0.4),
-                                                inset -2px -2px 8px rgba(0,0,0,0.3),
-                                                inset 2px 2px 8px rgba(255,255,255,0.1)
-                                            `,
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            transform: 'translateZ(5px)'
-                                        }}
-                                    >
-                                        {/* Side face for depth */}
-                                        <div className="absolute right-[-4px] top-0 bottom-0 w-1"
-                                            style={{
-                                                background: `linear-gradient(180deg, ${i % 2 === 0 ? '#3852CC' : '#1AA3BB'}dd, ${i % 2 === 0 ? '#3852CC' : '#1AA3BB'}33)`,
-                                                transform: 'rotateY(90deg) translateZ(3px)',
-                                                transformOrigin: 'right'
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] p-6">
+                        <div className="h-full w-full relative" style={{ transform: 'translateZ(20px)' }}>
+                            {/* Header */}
+                            <div className="absolute top-0 left-0 w-20 h-2 bg-gray-200 rounded-full opacity-50 mb-4" />
+
+                            {/* Line Chart */}
+                            <svg viewBox="0 0 200 100" className="w-full h-full overflow-visible mt-4">
+                                <defs>
+                                    <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#4F6BFF" stopOpacity="0.4" />
+                                        <stop offset="100%" stopColor="#4F6BFF" stopOpacity="0" />
+                                    </linearGradient>
+                                </defs>
+
+                                {/* Grid Lines */}
+                                <line x1="0" y1="25" x2="200" y2="25" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4 4" />
+                                <line x1="0" y1="50" x2="200" y2="50" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4 4" />
+                                <line x1="0" y1="75" x2="200" y2="75" stroke="#E5E7EB" strokeWidth="1" strokeDasharray="4 4" />
+
+                                {/* Area */}
+                                <path
+                                    d="M0,60 C40,55 60,30 100,40 S160,10 200,5 V100 H0 Z"
+                                    fill="url(#lineGradient)"
+                                />
+
+                                {/* Line Stroke */}
+                                <path
+                                    d="M0,60 C40,55 60,30 100,40 S160,10 200,5"
+                                    fill="none"
+                                    stroke="#4F6BFF"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    className="drop-shadow-md"
+                                />
+
+                                {/* Data Points */}
+                                <circle cx="100" cy="40" r="3" fill="#fff" stroke="#4F6BFF" strokeWidth="2" />
+                                <circle cx="200" cy="5" r="3" fill="#fff" stroke="#4F6BFF" strokeWidth="2" />
+                            </svg>
                         </div>
                     </div>
                     {/* Shadow layer */}
-                    <div className="absolute inset-0 bg-black/20 rounded-2xl blur-xl" style={{ transform: 'translateZ(-20px) scale(0.95)' }} />
+                    <div className="absolute inset-0 bg-black/5 rounded-2xl blur-xl" style={{ transform: 'translateZ(-20px) scale(0.95)' }} />
                 </div>
             </motion.div>
 

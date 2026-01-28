@@ -1,9 +1,10 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8005', // Backend URL
+    baseURL: 'https://sage-unrocky-cursively.ngrok-free.dev', // Hardcoded Ngrok URL
     headers: {
         'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true', // Required to bypass Ngrok warning
     },
 });
 

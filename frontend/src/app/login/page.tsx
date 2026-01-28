@@ -14,7 +14,7 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
 
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8005';
+        const baseUrl = 'https://sage-unrocky-cursively.ngrok-free.dev';
         try {
             if (isLogin) {
                 // Login Flow
@@ -24,7 +24,10 @@ export default function LoginPage() {
 
                 const res = await fetch(`${baseUrl}/token`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'ngrok-skip-browser-warning': 'true',
+                    },
                     body: params
                 });
 
@@ -38,7 +41,10 @@ export default function LoginPage() {
                 // Register Flow
                 const res = await fetch(`${baseUrl}/register`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true',
+                    },
                     body: JSON.stringify(formData)
                 });
 

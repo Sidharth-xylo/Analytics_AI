@@ -78,7 +78,7 @@ def get_user_session(user_id: int) -> Dict[str, Any]:
                     for record in results:
                         # Check if file exists on disk
                         if os.path.exists(record.file_path):
-                            file_id = str(uuid.uuid4()) # Generate new ID for session
+                            file_id = str(record.id) # Use Stable DB ID
                             source = "url" if "Google Sheet" in record.file_name else "file"
                             
                             user_sessions[user_id]["files"][file_id] = {
@@ -340,19 +340,7 @@ async def connect_url(
              
         df = sanitize_dataframe(df)
         
-        session_data = get_user_session(current_user.id)
-        file_id = str(uuid.uuid4())
-        
-        session_data["files"][file_id] = {
-            "df": df,
-            "filename": final_filename,
-            "path": tmp_path,
-            "source": "url",
-            "url": url
-        }
-        session_data["active_file_id"] = file_id
-        
-        # SAVE TO DB
+        # SAVE TO DB FIRST TO GET ID
         try:
             db_record = AnalysisSession(
                 user_id=current_user.id,
@@ -361,8 +349,33 @@ async def connect_url(
             )
             session.add(db_record)
             session.commit()
+            session.refresh(db_record)
+            
+            file_id = str(db_record.id) # Use Stable DB ID
+            
+            session_data = get_user_session(current_user.id)
+            session_data["files"][file_id] = {
+                "df": df,
+                "filename": final_filename,
+                "path": tmp_path,
+                "source": "url",
+                "url": url
+            }
+            session_data["active_file_id"] = file_id
+
         except Exception as e:
              print(f"Warning: Failed to save to DB: {e}")
+             # Fallback if DB fails (shouldn't happen)
+             file_id = str(uuid.uuid4())
+             session_data = get_user_session(current_user.id)
+             session_data["files"][file_id] = {
+                 "df": df, 
+                 "filename": final_filename,
+                 "path": tmp_path,
+                 "source": "url",
+                 "url": url
+             }
+             session_data["active_file_id"] = file_id
 
         return clean_for_json({
             "message": f"Connected! Loaded {len(df)} rows.", 
@@ -401,9 +414,19 @@ async def upload_file(
             
         df = sanitize_dataframe(df)
         
-        session_data = get_user_session(current_user.id)
-        file_id = str(uuid.uuid4())
+        # SAVE TO DB FIRST
+        db_record = AnalysisSession(
+            user_id=current_user.id,
+            file_path=file_path,
+            file_name=file.filename
+        )
+        session.add(db_record)
+        session.commit()
+        session.refresh(db_record)
         
+        file_id = str(db_record.id) # Use Stable DB ID
+        
+        session_data = get_user_session(current_user.id)
         session_data["files"][file_id] = {
             "df": df,
             "filename": file.filename,
@@ -412,15 +435,6 @@ async def upload_file(
             "timestamp": os.path.getmtime(file_path)
         }
         session_data["active_file_id"] = file_id
-        
-        # SAVE TO DB
-        db_record = AnalysisSession(
-            user_id=current_user.id,
-            file_path=file_path,
-            file_name=file.filename
-        )
-        session.add(db_record)
-        session.commit()
         
         return clean_for_json({
             "message": "File Uploaded", 
@@ -508,12 +522,14 @@ async def chat(request: QueryRequest, current_user: User = Depends(get_current_u
     1. If query implies "Summary"/"Dashboard", return LIST of 1 KPI + 1 Chart.
     2. Else return single widget.
     
-    REQUIRED OUTPUT:
+    REQUIRED OUTPUT FORMAT:
+    You MUST return the result as a dictionary exactly like this:
+    {{ "type": "string", "value": json.dumps(YOUR_DATA) }}
+    
+    WHERE YOUR_DATA is:
     {{ "vis_type": "kpi", "payload": {{ "label": "...", "value": "..." }} }}
     OR
     {{ "vis_type": "chart", "payload": {{ "type": "bar", "title": "...", "data": [...] }} }}
-    
-    Use json.dumps() and return as 'value'.
     """
     
     try:
