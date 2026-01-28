@@ -58,6 +58,51 @@ user_sessions: Dict[int, Dict[str, Any]] = {}
 def get_user_session(user_id: int) -> Dict[str, Any]:
     """Retrieves session dict. If empty, tries to restore from DB."""
     # DEBUG PRINT
+    if user_id in user_sessions:
+        print(f"    - Found active session for user {user_id}")
+    else:
+        print(f"    - No active session for user {user_id}, restoring from DB...")
+        user_sessions[user_id] = {"files": {}, "active_file_id": None}
+        
+    return user_sessions[user_id]
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+# --- AUTH ROUTES ---
+
+@app.post("/register")
+async def register(user_data: UserCreate, session: Session = Depends(get_session)):
+    # Check existing
+    statement = select(User).where(User.email == user_data.email)
+    existing_user = session.exec(statement).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create User
+    new_user = User(
+        email=user_data.email,
+        password_hash=get_password_hash(user_data.password)
+    )
+    session.add(new_user)
+    session.commit()
+    session.refresh(new_user)
+    
+    # Generate Token
+    access_token = create_access_token(data={"sub": new_user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+    statement = select(User).where(User.email == form_data.username)
+    user = session.exec(statement).first()
+    
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    
+    access_token = create_access_token(data={"sub": user.email})
+    return {"access_token": access_token, "token_type": "bearer"}
     print(f"🔍 get_user_session called for UserID: {user_id}")
     
     if user_id not in user_sessions:
