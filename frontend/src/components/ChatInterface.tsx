@@ -34,6 +34,22 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(false);
     const [dataConnected, setDataConnected] = useState(isConnected);
+    const [loadingText, setLoadingText] = useState("Analyzing request...");
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (loading) {
+            const steps = ["Analyzing request...", "Querying dataset...", "Calculating insights...", "Rendering visualization..."];
+            let i = 0;
+            interval = setInterval(() => {
+                setLoadingText(steps[i % steps.length]);
+                i++;
+            }, 2500);
+        } else {
+            setLoadingText("Analyzing request...");
+        }
+        return () => clearInterval(interval);
+    }, [loading]);
 
     // Sidebar State
     const [sidebarOpen, setSidebarOpen] = useState(true); // Default Open for visibility
@@ -406,7 +422,7 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                             <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center">
                                 <Loader2 className="w-4 h-4 animate-spin text-brand-deepTeal" />
                             </div>
-                            <span className="text-sm font-medium">Thinking...</span>
+                            <span className="text-sm font-medium min-w-[120px]">{loadingText}</span>
                         </motion.div>
                     )}
                 </div>

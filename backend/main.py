@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
@@ -25,6 +25,48 @@ import math
 from backend.database import engine, get_session
 from backend.models import User, AnalysisSession, Widget
 from backend.auth import get_password_hash, verify_password, create_access_token, get_current_user
+
+# --- CONFIGURATION ---
+dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
+load_dotenv(dotenv_path, override=True)
+
+app = FastAPI()
+
+# --- WARMUP HELPER ---
+def warmup_agent(user_id: int, file_id: str):
+    """Initializes the SmartDataframe and runs a dummy query to warm up the LLM."""
+    print(f"🔥 Warming up agent for User {user_id}, File {file_id}...")
+    try:
+        session_data = get_user_session(user_id)
+        if file_id in session_data["files"]:
+            file_info = session_data["files"][file_id]
+            
+            # 1. Initialize DF if needed
+            if file_info.get("df") is None:
+                 if file_info.get("path"):
+                    if file_info["path"].endswith('.csv'):
+                        file_info["df"] = pd.read_csv(file_info["path"], on_bad_lines='skip')
+                    else:
+                        file_info["df"] = pd.read_excel(file_info["path"])
+            
+            # 2. Initialize Agent if needed
+            if "sdf" not in file_info or file_info.get("sdf") is None:
+                api_key = os.getenv("OPENAI_API_KEY")
+                llm = OpenAI(api_token=api_key, model="gpt-4o-mini")
+                file_info["sdf"] = SmartDataframe(file_info["df"], config={
+                    "llm": llm, 
+                    "enable_cache": True,
+                    "model_name": "gpt-4o-mini"
+                })
+            
+            # 3. Validation Run (Head/Describe)
+            # This forces the agent to extract headers and potentially cache the schema
+            print("   -> Running initial schema extraction...")
+            file_info["sdf"].chat("Show me the first 5 rows")
+            print(f"✅ Agent warmed up for {file_info['filename']}")
+            
+    except Exception as e:
+        print(f"⚠️ Warmup failed: {e}")
 
 # --- CONFIGURATION ---
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
@@ -329,6 +371,7 @@ def delete_file(file_id: str, current_user: User = Depends(get_current_user), se
 @app.post("/connect_url")
 async def connect_url(
     request: ConnectRequest, 
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
@@ -408,6 +451,9 @@ async def connect_url(
             }
             session_data["active_file_id"] = file_id
 
+            # SCHEDULE WARMUP
+            background_tasks.add_task(warmup_agent, current_user.id, file_id)
+
         except Exception as e:
              print(f"Warning: Failed to save to DB: {e}")
              # Fallback if DB fails (shouldn't happen)
@@ -440,6 +486,7 @@ async def connect_url(
 
 @app.post("/upload")
 async def upload_file(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...), 
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
@@ -480,6 +527,9 @@ async def upload_file(
             "timestamp": os.path.getmtime(file_path)
         }
         session_data["active_file_id"] = file_id
+
+        # SCHEDULE WARMUP
+        background_tasks.add_task(warmup_agent, current_user.id, file_id)
         
         return clean_for_json({
             "message": "File Uploaded", 
