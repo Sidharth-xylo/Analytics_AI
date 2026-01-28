@@ -14,7 +14,7 @@ export default function LoginPage() {
         e.preventDefault();
         setLoading(true);
 
-        const baseUrl = 'http://localhost:8005'; // Updated port to 8005
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8005';
         try {
             if (isLogin) {
                 // Login Flow
