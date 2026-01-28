@@ -41,7 +41,7 @@ export default function Dashboard() {
     };
 
     return (
-        <main className="min-h-screen bg-brand-deep text-brand-text-primary relative selection:bg-brand-primary/30">
+        <main className="h-screen bg-brand-deep text-brand-text-primary relative selection:bg-brand-primary/30 overflow-hidden flex flex-col">
 
             {/* Background Elements */}
             <DecorativeBackground />
@@ -52,35 +52,32 @@ export default function Dashboard() {
                 chartType="bar"
             />
 
-            <div className="container mx-auto px-4 py-8 relative z-10 min-h-screen flex flex-col">
-                <header className="flex items-center justify-between py-6">
+            <div className="flex-1 flex flex-col relative z-10 min-h-0">
+                <header className="flex-none px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <div className="w-24 h-24 bg-white border-2 border-purple-500 rounded-3xl flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.3)] relative overflow-hidden">
+                        <div className="w-16 h-16 bg-white border-2 border-purple-500 rounded-2xl flex items-center justify-center shadow-lg relative overflow-hidden">
                             <Image src="/mascot.png" alt="Logo" fill className="object-contain p-2" priority />
                         </div>
                         <div className="flex flex-col justify-center">
-                            <h1 className="text-5xl font-extrabold tracking-tight leading-none text-black">
+                            <h1 className="text-4xl font-extrabold tracking-tight leading-none text-slate-900">
                                 XYLO<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">4AI</span>
                             </h1>
-                            <p className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-chart-cyan mt-1">
-                                NEX-GEN
-                            </p>
-                            <p className="text-sm text-brand-text-muted mt-0 tracking-wide uppercase">
-                                Business intelligence
+                            <p className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-chart-cyan uppercase tracking-wider">
+                                NEX-GEN BI
                             </p>
                         </div>
                     </div>
 
                     <button
                         onClick={handleLogout}
-                        className="text-sm text-brand-text-muted hover:text-brand-primary transition-colors"
+                        className="text-sm text-brand-text-muted hover:text-brand-primary transition-colors font-medium px-4 py-2 hover:bg-white/50 rounded-lg"
                     >
                         Logout
                     </button>
                 </header>
 
                 {/* content */}
-                <div className="flex-1 flex flex-col items-center justify-center relative py-10">
+                <div className="flex-1 w-full min-h-0 flex flex-col items-center justify-center relative p-4">
                     <AnimatePresence mode="wait">
                         {!dataLoaded ? (
                             <motion.div

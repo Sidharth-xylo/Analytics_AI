@@ -16,16 +16,16 @@ const config: Config = {
                     secondarySoft: "#8B85FF",
                     accent: "#22C55E", // Green (Kept Same)
                     accentSoft: "#4ADE80",
-                    deep: "#FFFFFF", // App Background -> Pure White
-                    panel: "#F3F4F6", // Sidebar/Panel -> Light Gray
-                    card: "#FFFFFF", // Cards -> White
-                    cardHover: "#F9FAFB", // Card Hover -> Very Light Gray
-                    border: "#E5E7EB", // Borders -> Light Gray
+                    deep: "#F8FAFC", // App Background -> Very Light Blue/Gray
+                    panel: "rgba(255, 255, 255, 0.7)", // Sidebar/Panel -> Light Glass
+                    card: "rgba(255, 255, 255, 0.8)", // Cards -> Stronger Light Glass
+                    cardHover: "rgba(255, 255, 255, 0.9)", // Card Hover
+                    border: "rgba(226, 232, 240, 0.8)", // Borders -> Light Gray (Slate-200)
                     text: {
-                        primary: "#111827", // Headings -> Dark Slate (Almost Black)
-                        secondary: "#374151", // Body -> Dark Gray
-                        muted: "#6B7280", // Muted -> Medium Gray
-                        light: "#F9FAFB", // Light text (for inverted contexts)
+                        primary: "#0F172A", // Headings -> Slate-900
+                        secondary: "#475569", // Body -> Slate-600
+                        muted: "#94A3B8", // Muted -> Slate-400
+                        light: "#FFFFFF", // Light text (for buttons/inverted)
                     },
                     chart: {
                         blue: "#4F6BFF",

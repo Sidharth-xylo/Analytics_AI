@@ -551,6 +551,7 @@ async def chat(request: QueryRequest, current_user: User = Depends(get_current_u
             "llm": llm, 
             "save_charts": False, 
             "open_charts": False, 
+            "enable_cache": True,
             "custom_whitelisted_dependencies": ["json"]
         })
     else:
@@ -564,17 +565,17 @@ async def chat(request: QueryRequest, current_user: User = Depends(get_current_u
     {wide_format_hint}
     
     TASK:
-    1. If query implies "Summary"/"Dashboard", return LIST of 1 KPI + 1 Chart.
-    2. Else return single widget.
+    1. ALWAYS PREFER VISUALIZATION over simple text.
+    2. For "Top N" or "Distribution" or "Comparison" queries, ALWAYS return a "chart" widget with the data.
+    3. Even for singular values, return a LIST containing `[{{ "vis_type": "kpi", ... }}, {{ "vis_type": "chart", ... }}]` if possible.
     
     REQUIRED OUTPUT FORMAT:
     You MUST return the result as a dictionary exactly like this:
     {{ "type": "string", "value": json.dumps(YOUR_DATA) }}
     
-    WHERE YOUR_DATA is:
-    {{ "vis_type": "kpi", "payload": {{ "label": "...", "value": "..." }} }}
-    OR
-    {{ "vis_type": "chart", "payload": {{ "type": "bar", "title": "...", "data": [...] }} }}
+    WHERE YOUR_DATA is either:
+    - A single widget object: {{ "vis_type": "...", "payload": ... }}
+    - OR a LIST of widgets: [ {{ "vis_type": "...", ... }}, {{ "vis_type": "...", ... }} ]
     """
     
     try:
@@ -594,15 +595,41 @@ async def chat(request: QueryRequest, current_user: User = Depends(get_current_u
                 try: data = ast.literal_eval(clean_str)
                 except: return {"type": "text", "payload": clean_str}
 
+        # FIX: Handle case where LLM returns dict with 'kpi'/'chart' keys instead of list
+        if isinstance(data, dict) and ('kpi' in data or 'chart' in data):
+            new_list = []
+            if 'kpi' in data: new_list.append(data['kpi'])
+            if 'chart' in data: new_list.append(data['chart'])
+            data = new_list
+
+        # Validate and Fix Widgets
+        final_widgets = []
         if isinstance(data, list):
-            return clean_for_json({"type": "dashboard", "payload": data})
-        
-        if isinstance(data, dict):
+            final_widgets = data
+        elif isinstance(data, dict):
             if "vis_type" in data:
-                return clean_for_json({"type": "widget", "payload": [data]})
+                final_widgets = [data]
             elif "type" in data:
                  vis_type = "kpi" if data["type"] == "kpi" else "chart"
-                 return clean_for_json({"type": "widget", "payload": [{"vis_type": vis_type, "payload": data}]})
+                 final_widgets = [{"vis_type": vis_type, "payload": data}]
+        
+        # Post-process widgets to ensure frontend compatibility
+        for widget in final_widgets:
+            if widget.get("vis_type") == "chart":
+                if "payload" in widget and isinstance(widget["payload"], dict):
+                    # Default missing type to 'bar'
+                    if "type" not in widget["payload"]:
+                        widget["payload"]["type"] = "bar"
+                    # Normalize type
+                    widget["payload"]["type"] = str(widget["payload"]["type"]).lower()
+                    
+                    # Map common aliases
+                    if widget["payload"]["type"] == "column": 
+                        widget["payload"]["type"] = "bar"
+        
+        if final_widgets:
+             print(f"✅ Returning {len(final_widgets)} widgets: {json.dumps(final_widgets, default=str)[:200]}...")
+             return clean_for_json({"type": "dashboard", "payload": final_widgets})
             
         return clean_for_json({"type": "text", "payload": str(data)})
 

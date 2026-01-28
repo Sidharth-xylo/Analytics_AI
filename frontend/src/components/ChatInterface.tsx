@@ -358,8 +358,8 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
 
                                 <div
                                     className={`w-full max-w-[95%] md:max-w-[85%] rounded-[24px] p-4 md:p-6 shadow-sm transition-all overflow-hidden ${msg.role === "user"
-                                        ? "bg-gray-100 text-gray-800 rounded-tr-sm font-medium border border-gray-200"
-                                        : "bg-white text-gray-700 rounded-tl-sm border border-gray-100 shadow-md"
+                                        ? "bg-brand-primary/10 text-brand-primary rounded-tr-sm font-medium border border-brand-primary/20"
+                                        : "bg-white/80 text-gray-700 rounded-tl-sm border border-white/50 shadow-md backdrop-blur-md"
                                         }`}
                                 >
                                     {msg.content && <p className="whitespace-pre-wrap mb-4">{msg.content}</p>}
@@ -386,11 +386,13 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                                     )}
                                 </div>
 
-                                {msg.role === "user" && (
-                                    <div className="w-10 h-10 rounded-full bg-brand-primary/20 flex items-center justify-center mt-1 shadow-sm border border-brand-primary/30 flex-shrink-0">
-                                        <User className="w-6 h-6 text-brand-deepTeal" />
-                                    </div>
-                                )}
+                                {
+                                    msg.role === "user" && (
+                                        <div className="w-10 h-10 rounded-full bg-brand-primary/20 flex items-center justify-center mt-1 shadow-sm border border-brand-primary/30 flex-shrink-0">
+                                            <User className="w-6 h-6 text-brand-deepTeal" />
+                                        </div>
+                                    )
+                                }
                             </motion.div>
                         ))}
                     </AnimatePresence>
@@ -432,6 +434,6 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

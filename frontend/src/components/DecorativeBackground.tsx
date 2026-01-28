@@ -35,7 +35,7 @@ export default function DecorativeBackground() {
                     >
                         <animate
                             attributeName="d"
-                            dur="20s"
+                            dur="60s"
                             repeatCount="indefinite"
                             values="
                                 M0,400 Q240,320 480,380 T960,360 Q1200,340 1440,400 T1920,420;
@@ -50,7 +50,7 @@ export default function DecorativeBackground() {
                     >
                         <animate
                             attributeName="d"
-                            dur="20s"
+                            dur="60s"
                             repeatCount="indefinite"
                             values="
                                 M0,400 Q240,320 480,380 T960,360 Q1200,340 1440,400 T1920,420 V1080 H0 Z;
@@ -71,7 +71,7 @@ export default function DecorativeBackground() {
                     >
                         <animate
                             attributeName="d"
-                            dur="25s"
+                            dur="75s"
                             repeatCount="indefinite"
                             values="
                                 M0,500 Q320,420 640,480 T1280,460 Q1520,440 1760,500 T1920,520;
@@ -86,7 +86,7 @@ export default function DecorativeBackground() {
                     >
                         <animate
                             attributeName="d"
-                            dur="25s"
+                            dur="75s"
                             repeatCount="indefinite"
                             values="
                                 M0,500 Q320,420 640,480 T1280,460 Q1520,440 1760,500 T1920,520 V1080 H0 Z;
@@ -107,7 +107,7 @@ export default function DecorativeBackground() {
                     >
                         <animate
                             attributeName="d"
-                            dur="30s"
+                            dur="90s"
                             repeatCount="indefinite"
                             values="
                                 M0,600 Q400,520 800,580 T1600,560 Q1760,540 1920,600;
@@ -122,7 +122,7 @@ export default function DecorativeBackground() {
                     >
                         <animate
                             attributeName="d"
-                            dur="30s"
+                            dur="90s"
                             repeatCount="indefinite"
                             values="
                                 M0,600 Q400,520 800,580 T1600,560 Q1760,540 1920,600 V1080 H0 Z;
@@ -160,8 +160,8 @@ export default function DecorativeBackground() {
                             <svg viewBox="0 0 200 100" className="w-full h-full overflow-visible mt-4">
                                 <defs>
                                     <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#4F6BFF" stopOpacity="0.4" />
-                                        <stop offset="100%" stopColor="#4F6BFF" stopOpacity="0" />
+                                        <stop offset="0%" stopColor="#4F6BFF" stopOpacity="0.6" />
+                                        <stop offset="100%" stopColor="#4F6BFF" stopOpacity="0.1" />
                                     </linearGradient>
                                 </defs>
 

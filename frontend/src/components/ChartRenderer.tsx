@@ -33,6 +33,15 @@ export default function ChartRenderer({ data }: { data: ChartData }) {
     let xKey = x_key || "label";
     let yKey = y_key || "value";
 
+    // Debugging
+    console.log("ChartRenderer Data:", { type, xKey, yKey, dataLength: chartData?.length, chartData });
+
+    // Robust Check: Ensure chartData is an array
+    if (!Array.isArray(chartData)) {
+        console.error("ChartRenderer Error: chartData is not an array!", chartData);
+        return <p className="text-red-400 text-xs p-4">Error: Chart data format is invalid (Expected Array, got {typeof chartData})</p>;
+    }
+
     if (chartData && chartData.length > 0) {
         const firstItem = chartData[0];
         const keys = Object.keys(firstItem);
@@ -79,9 +88,9 @@ export default function ChartRenderer({ data }: { data: ChartData }) {
                                 boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
                                 backdropFilter: 'blur(4px)',
                             }}
-                            cursor={{ fill: 'rgba(79, 107, 255, 0.3)' }}
+                            cursor={{ fill: 'rgba(79, 107, 255, 0.1)' }}
                         />
-                        <Legend wrapperStyle={{ paddingTop: '10px', color: '#000000' }} />
+                        <Legend wrapperStyle={{ paddingTop: '10px', color: '#9CA3AF' }} />
                         <Bar
                             dataKey={yKey}
                             radius={[6, 6, 0, 0]}

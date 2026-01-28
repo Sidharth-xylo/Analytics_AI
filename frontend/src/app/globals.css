@@ -12,8 +12,8 @@
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: #FFFFFF;
+  color: #0F172A;
+  background: #F8FAFC;
   /* Light App Background */
   min-height: 100vh;
 }

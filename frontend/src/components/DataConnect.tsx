@@ -54,7 +54,7 @@ export default function DataConnect({ onConnect }: { onConnect: (data: any) => v
     };
 
     return (
-        <div className="w-full max-w-lg mx-auto bg-white rounded-[24px] shadow-sm border border-brand-border p-6 md:p-8">
+        <div className="w-full max-w-lg mx-auto bg-brand-card/40 backdrop-blur-xl rounded-[24px] shadow-2xl border border-brand-border p-6 md:p-8">
             {/* Simple Top Navigation */}
             <div className="flex justify-center gap-6 mb-8">
                 <button
@@ -117,13 +117,7 @@ export default function DataConnect({ onConnect }: { onConnect: (data: any) => v
                             className="flex flex-col items-center text-center w-full"
                         >
                             <div className="w-full flex flex-col gap-4">
-                                <div className="text-left bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 text-sm text-blue-700">
-                                    <div className="bg-white p-1 rounded-md h-fit shadow-sm"><LinkIcon className="w-4 h-4 text-blue-500" /></div>
-                                    <div>
-                                        <p className="font-semibold mb-1">Public Link Required</p>
-                                        <p className="opacity-80 text-xs">Ensure your Google Sheet is set to "Anyone with the link".</p>
-                                    </div>
-                                </div>
+
 
                                 <div className="flex gap-2">
                                     <Input
