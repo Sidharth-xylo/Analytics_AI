@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { chat, getFiles, uploadFile, connectUrl, deleteFile } from "@/lib/api";
 import { Send, User, Loader2, ChevronRight, FileText, Plus, X, UploadCloud, Link as LinkIcon, CheckCircle2, Trash2 } from "lucide-react";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import ChartRenderer from "@/components/ChartRenderer";
 import KPICard from "@/components/KPICard";
 import DataConnect from "@/components/DataConnect";
+import GramophoneLoader from "@/components/GramophoneLoader";
 import { cn } from "@/lib/utils";
 
 interface Widget {
@@ -35,6 +36,14 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
     const [loading, setLoading] = useState(false);
     const [dataConnected, setDataConnected] = useState(isConnected);
     const [loadingText, setLoadingText] = useState("Analyzing request...");
+
+    // Ref for auto-scrolling to latest message
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Auto-scroll to bottom when messages change
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, loading]);
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -205,7 +214,7 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
     };
 
     return (
-        <div className="flex h-[600px] w-full max-w-5xl mx-auto bg-brand-panel backdrop-blur-xl rounded-[30px] border border-brand-border overflow-hidden shadow-2xl relative">
+        <div className="flex h-[85vh] min-h-[600px] w-full max-w-7xl mx-auto bg-brand-panel backdrop-blur-xl rounded-[30px] border border-brand-border overflow-hidden shadow-2xl relative">
 
             {/* Sidebar / Document Drawer */}
             <AnimatePresence>
@@ -214,7 +223,7 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                         initial={{ x: -250, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: -250, opacity: 0 }}
-                        className="w-64 bg-brand-card border-r border-brand-border h-full flex flex-col shadow-xl z-20 absolute md:relative"
+                        className="w-64 bg-brand-card border-r border-brand-border flex flex-col shadow-xl z-20 relative"
                     >
                         <div className="p-4 border-b border-brand-border flex items-center justify-between">
                             <h3 className="font-semibold text-brand-text-primary text-sm">Documents</h3>
@@ -223,7 +232,8 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                             </Button>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                        {/* Scrollable document list - takes remaining space */}
+                        <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
                             {files.length === 0 && (
                                 <div className="text-center p-4 text-xs text-brand-text-muted opacity-60">
                                     No documents yet.
@@ -256,8 +266,8 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                             ))}
                         </div>
 
-                        {/* Add File Section at Bottom */}
-                        <div className="p-3 bg-brand-deep/30 border-t border-brand-border">
+                        {/* Add File Section - Fixed at Bottom */}
+                        <div className="p-3 bg-brand-deep/30 border-t border-brand-border flex-shrink-0">
                             {!showAddPanel ? (
                                 <Button
                                     onClick={() => setShowAddPanel(true)}
@@ -331,10 +341,18 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
             </AnimatePresence>
 
             {/* Main Chat Area */}
-            <div className="flex flex-col flex-1 h-full relative z-10 bg-brand-deep/30">
+            <div className="flex flex-col flex-1 relative z-10 bg-brand-deep/30">
 
-                {/* Messages Area */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-brand-border scrollbar-track-transparent">
+                {/* Messages Area - Scrollable */}
+                <div
+                    className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-brand-border scrollbar-track-transparent min-h-0"
+                    style={{
+                        scrollBehavior: 'smooth',
+                        willChange: 'scroll-position',
+                        transform: 'translateZ(0)',
+                        WebkitOverflowScrolling: 'touch'
+                    }}
+                >
                     {messages.length === 0 && (
                         <div className="flex flex-col items-center justify-center h-full text-brand-text-secondary space-y-8">
                             <div className="text-center">
@@ -361,10 +379,11 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                         {messages.map((msg, index) => (
                             <motion.div
                                 key={index}
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} items-start gap-3`}
+                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                className={`flex gap-3 md:gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+                                style={{ transform: 'translateZ(0)' }}
                             >
                                 {msg.role === "assistant" && (
                                     <div className="w-12 h-12 relative mt-1 flex-shrink-0">
@@ -373,15 +392,20 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                                 )}
 
                                 <div
-                                    className={`w-full max-w-[95%] md:max-w-[85%] rounded-[24px] p-4 md:p-6 shadow-sm transition-all overflow-hidden ${msg.role === "user"
-                                        ? "bg-brand-primary/10 text-brand-primary rounded-tr-sm font-medium border border-brand-primary/20"
-                                        : "bg-white/80 text-gray-700 rounded-tl-sm border border-white/50 shadow-md backdrop-blur-md"
+                                    className={`w-full max-w-[95%] md:max-w-[85%] rounded-2xl p-5 md:p-6 transition-all overflow-hidden ${msg.role === "user"
+                                        ? "bg-gradient-ai text-white rounded-tr-sm font-medium shadow-premium"
+                                        : "bg-white/95 text-slate-800 rounded-tl-sm border border-slate-200/60 shadow-card backdrop-blur-xl"
                                         }`}
                                 >
-                                    {msg.content && <p className="whitespace-pre-wrap mb-4">{msg.content}</p>}
+                                    {msg.content && (
+                                        <p className={`whitespace-pre-wrap leading-relaxed ${msg.role === "user" ? "text-white" : "text-slate-800"
+                                            } ${msg.widgets && msg.widgets.length > 0 ? 'mb-5' : ''}`}>
+                                            {msg.content}
+                                        </p>
+                                    )}
 
                                     {msg.widgets && msg.widgets.length > 0 && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 w-full">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                             {msg.widgets.map((widget: Widget, idx: number) => {
                                                 if (widget.vis_type === 'kpi') {
                                                     return (
@@ -404,8 +428,8 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
 
                                 {
                                     msg.role === "user" && (
-                                        <div className="w-10 h-10 rounded-full bg-brand-primary/20 flex items-center justify-center mt-1 shadow-sm border border-brand-primary/30 flex-shrink-0">
-                                            <User className="w-6 h-6 text-brand-deepTeal" />
+                                        <div className="w-10 h-10 rounded-full bg-gradient-ai flex items-center justify-center mt-1 shadow-premium flex-shrink-0">
+                                            <User className="w-5 h-5 text-white" />
                                         </div>
                                     )
                                 }
@@ -415,24 +439,26 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
 
                     {loading && (
                         <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="flex items-center gap-3 text-brand-text-muted ml-4"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex flex-col items-center gap-4 my-8"
                         >
-                            <div className="w-8 h-8 rounded-full bg-brand-primary/20 flex items-center justify-center">
-                                <Loader2 className="w-4 h-4 animate-spin text-brand-deepTeal" />
-                            </div>
-                            <span className="text-sm font-medium min-w-[120px]">{loadingText}</span>
+                            <GramophoneLoader />
+                            <span className="text-sm font-semibold text-slate-700">{loadingText}</span>
                         </motion.div>
                     )}
+
+                    {/* Scroll anchor */}
+                    <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input Area */}
-                <div className="p-4 bg-brand-panel/60 border-t border-brand-border backdrop-blur-md">
-                    <div className="flex gap-2 items-center">
+
+                {/* Input Area - Fixed at Bottom */}
+                <div className="p-5 bg-white/80 border-t border-slate-200/60 backdrop-blur-xl flex-shrink-0">
+                    <div className="flex gap-3 items-center">
                         <Button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
-                            className={cn("bg-transparent hover:bg-white/10 text-brand-text-muted p-2 h-10 w-10 transition-transform", sidebarOpen ? "rotate-180" : "")}
+                            className={cn("bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 h-11 w-11 rounded-xl transition-all", sidebarOpen ? "rotate-180" : "")}
                         >
                             <ChevronRight className="w-5 h-5" />
                         </Button>
@@ -440,16 +466,21 @@ export default function ChatInterface({ isConnected = false }: { isConnected?: b
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            placeholder={selectedFileId ? "Ask questions about this file..." : "Select or upload a file first"}
+                            placeholder={selectedFileId ? "Ask anything about your data..." : "Select or upload a file first"}
                             disabled={!selectedFileId}
-                            className="flex-1 bg-brand-deep border-brand-border focus-visible:ring-brand-primary text-brand-text-primary placeholder:text-brand-text-muted rounded-xl shadow-sm"
+                            className="flex-1 h-11 bg-slate-50 border-slate-200 focus-visible:ring-2 focus-visible:ring-brand-primary/20 focus-visible:border-brand-primary text-slate-900 placeholder:text-slate-400 rounded-xl"
                         />
-                        <Button onClick={handleSend} disabled={loading || !query.trim()} className="bg-brand-primary hover:bg-brand-primarySoft text-brand-text-primary font-semibold rounded-xl transition-all shadow-sm hover:shadow-md h-10 px-4">
+                        <Button
+                            onClick={handleSend}
+                            disabled={loading || !query.trim()}
+                            className="bg-gradient-ai hover:opacity-90 text-white font-semibold rounded-xl transition-all shadow-premium hover:shadow-premium-lg h-11 px-5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
                             <Send className="w-4 h-4" />
+                            Send
                         </Button>
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }

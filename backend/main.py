@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
@@ -31,6 +31,19 @@ dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path, override=True)
 
 app = FastAPI()
+
+# --- SESSION HELPER ---
+def get_session_user_id(request: Request) -> int:
+    """
+    Extracts session ID from request headers and converts to integer user ID
+    """
+    session_id = request.headers.get("X-Session-ID", "default-session")
+    
+    # Convert UUID string to consistent integer hash
+    # This allows us to use session IDs as user_id in the database
+    user_id = abs(hash(session_id)) % (10**8)  # Keep it within reasonable integer range
+    
+    return user_id
 
 # --- WARMUP HELPER ---
 def warmup_agent(user_id: int, file_id: str):
@@ -105,6 +118,35 @@ def get_user_session(user_id: int) -> Dict[str, Any]:
     else:
         print(f"    - No active session for user {user_id}, restoring from DB...")
         user_sessions[user_id] = {"files": {}, "active_file_id": None}
+        
+        # Restore files from database
+        from backend.database import SessionLocal
+        from backend.models import UploadedFile
+        from sqlmodel import select
+        
+        db = SessionLocal()
+        try:
+            statement = select(UploadedFile).where(UploadedFile.user_id == user_id)
+            db_files = db.exec(statement).all()
+            
+            for db_file in db_files:
+                user_sessions[user_id]["files"][db_file.file_id] = {
+                    "id": db_file.file_id,
+                    "filename": db_file.filename,
+                    "path": db_file.file_path,
+                    "source": db_file.source,
+                    "url": db_file.url,
+                    "df": None,  # Lazy load
+                    "sdf": None,  # Lazy load
+                    "timestamp": 0
+                }
+                # Set the most recent file as active
+                if user_sessions[user_id]["active_file_id"] is None:
+                    user_sessions[user_id]["active_file_id"] = db_file.file_id
+                    
+            print(f"    - Restored {len(db_files)} files from database")
+        finally:
+            db.close()
         
     return user_sessions[user_id]
 
@@ -313,9 +355,11 @@ def get_dashboard(session: Session = Depends(get_session), current_user: User = 
     return widgets
 
 @app.get("/files")
-def get_files(current_user: User = Depends(get_current_user)):
-    print(f"📂 GET /files called for User: {current_user.email} (ID: {current_user.id})")
-    session_data = get_user_session(current_user.id)
+def get_files(request: Request):
+    # Get user ID from session
+    user_id = get_session_user_id(request)
+    print(f"📂 GET /files called for user (ID: {user_id})")
+    session_data = get_user_session(user_id)
     files_list = []
     
     for file_id, info in session_data["files"].items():
@@ -329,9 +373,11 @@ def get_files(current_user: User = Depends(get_current_user)):
     return files_list
 
 @app.delete("/files/{file_id}")
-def delete_file(file_id: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+def delete_file(file_id: str, request: Request, session: Session = Depends(get_session)):
     try:
-        session_data = get_user_session(current_user.id)
+        # Get user ID from session
+        user_id = get_session_user_id(request)
+        session_data = get_user_session(user_id)
         
         # 1. Check Memory
         if file_id in session_data["files"]:
@@ -346,7 +392,7 @@ def delete_file(file_id: str, current_user: User = Depends(get_current_user), se
                 session_data["active_file_id"] = None
                 
             # 2. Remove from DB
-            statement = select(AnalysisSession).where(AnalysisSession.user_id == current_user.id, AnalysisSession.file_path == file_path)
+            statement = select(AnalysisSession).where(AnalysisSession.user_id == user_id, AnalysisSession.file_path == file_path)
             results = session.exec(statement).all()
             for record in results:
                 session.delete(record)
@@ -370,13 +416,16 @@ def delete_file(file_id: str, current_user: User = Depends(get_current_user), se
 
 @app.post("/connect_url")
 async def connect_url(
-    request: ConnectRequest, 
+    request_body: ConnectRequest,
+    request: Request,
     background_tasks: BackgroundTasks,
-    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     try:
-        url = request.url.strip()
+        # Get user ID from session
+        user_id = get_session_user_id(request)
+        
+        url = request_body.url.strip()
         sheet_title = "Google Sheet Data"
         
         if "docs.google.com/spreadsheets" in url:
@@ -431,7 +480,7 @@ async def connect_url(
         # SAVE TO DB FIRST TO GET ID
         try:
             db_record = AnalysisSession(
-                user_id=current_user.id,
+                user_id=user_id,
                 file_path=tmp_path,
                 file_name=final_filename
             )
@@ -441,7 +490,7 @@ async def connect_url(
             
             file_id = str(db_record.id) # Use Stable DB ID
             
-            session_data = get_user_session(current_user.id)
+            session_data = get_user_session(anonymous_user_id)
             session_data["files"][file_id] = {
                 "df": df,
                 "filename": final_filename,
@@ -452,13 +501,13 @@ async def connect_url(
             session_data["active_file_id"] = file_id
 
             # SCHEDULE WARMUP
-            background_tasks.add_task(warmup_agent, current_user.id, file_id)
+            background_tasks.add_task(warmup_agent, anonymous_user_id, file_id)
 
         except Exception as e:
              print(f"Warning: Failed to save to DB: {e}")
              # Fallback if DB fails (shouldn't happen)
              file_id = str(uuid.uuid4())
-             session_data = get_user_session(current_user.id)
+             session_data = get_user_session(anonymous_user_id)
              session_data["files"][file_id] = {
                  "df": df, 
                  "filename": final_filename,
@@ -486,12 +535,15 @@ async def connect_url(
 
 @app.post("/upload")
 async def upload_file(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...), 
-    current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session)
 ):
     try:
+        # Get user ID from session
+        user_id = get_session_user_id(request)
+        
         upload_dir = os.path.join(tempfile.gettempdir(), "analytics_ai_uploads")
         os.makedirs(upload_dir, exist_ok=True)
         
@@ -508,7 +560,7 @@ async def upload_file(
         
         # SAVE TO DB FIRST
         db_record = AnalysisSession(
-            user_id=current_user.id,
+            user_id=user_id,
             file_path=file_path,
             file_name=file.filename
         )
@@ -518,7 +570,7 @@ async def upload_file(
         
         file_id = str(db_record.id) # Use Stable DB ID
         
-        session_data = get_user_session(current_user.id)
+        session_data = get_user_session(user_id)
         session_data["files"][file_id] = {
             "df": df,
             "filename": file.filename,
@@ -529,7 +581,7 @@ async def upload_file(
         session_data["active_file_id"] = file_id
 
         # SCHEDULE WARMUP
-        background_tasks.add_task(warmup_agent, current_user.id, file_id)
+        background_tasks.add_task(warmup_agent, user_id, file_id)
         
         return clean_for_json({
             "message": "File Uploaded", 
@@ -544,9 +596,11 @@ async def upload_file(
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/chat")
-async def chat(request: QueryRequest, current_user: User = Depends(get_current_user)):
-    session_data = get_user_session(current_user.id)
-    target_file_id = request.file_id or session_data.get("active_file_id")
+async def chat(request_body: QueryRequest, request: Request):
+    # Get user ID from session
+    user_id = get_session_user_id(request)
+    session_data = get_user_session(user_id)
+    target_file_id = request_body.file_id or session_data.get("active_file_id")
     
     if not target_file_id or target_file_id not in session_data["files"]:
         raise HTTPException(status_code=400, detail="No active file selected. Please upload a file.")
@@ -584,18 +638,19 @@ async def chat(request: QueryRequest, current_user: User = Depends(get_current_u
     except Exception as e:
         print(f"Warning: Auto-refresh failed: {e}")
 
+    # Detect domain context and format (needed for instructions)
+    domain_context = detect_domain_context(file_info["df"])
+    is_wide_format = detect_wide_format_dates(file_info["df"])
+    wide_format_hint = ""
+    if is_wide_format:
+        wide_format_hint = "\nDATA STRUCTURE HINT: Wide Format Time Series."
+
     # CHECK FOR CACHED AGENT
     if "sdf" not in file_info or file_info.get("sdf") is None:
         print(f"🤖 Initializing new SmartDataframe Agent for {file_info['filename']}...")
         api_key = os.getenv("OPENAI_API_KEY")
         # USE FASTER MODEL
         llm = OpenAI(api_token=api_key, model="gpt-4o-mini")
-        
-        domain_context = detect_domain_context(file_info["df"])
-        is_wide_format = detect_wide_format_dates(file_info["df"])
-        wide_format_hint = ""
-        if is_wide_format:
-            wide_format_hint = "\nDATA STRUCTURE HINT: Wide Format Time Series."
         
         file_info["sdf"] = SmartDataframe(file_info["df"], config={
             "llm": llm, 
@@ -629,7 +684,7 @@ async def chat(request: QueryRequest, current_user: User = Depends(get_current_u
     """
     
     try:
-        response = sdf.chat(request.query + instructions)
+        response = sdf.chat(request_body.query + instructions)
         
         if isinstance(response, dict) and "type" in response and "value" in response:
             if response["type"] == "string":

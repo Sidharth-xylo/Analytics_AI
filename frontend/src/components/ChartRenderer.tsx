@@ -36,14 +36,32 @@ export default function ChartRenderer({ data }: { data: ChartData }) {
     // Debugging
     console.log("ChartRenderer Data:", { type, xKey, yKey, dataLength: chartData?.length, chartData });
 
-    // Robust Check: Ensure chartData is an array
+    // Robust Check: Ensure chartData is an array (or convert if it's an object)
+    let processedData = chartData;
+
     if (!Array.isArray(chartData)) {
-        console.error("ChartRenderer Error: chartData is not an array!", chartData);
-        return <p className="text-red-400 text-xs p-4">Error: Chart data format is invalid (Expected Array, got {typeof chartData})</p>;
+        console.warn("ChartRenderer: Converting object to array format", chartData);
+
+        // If it's an object, try to convert it to an array
+        if (typeof chartData === 'object' && chartData !== null) {
+            // Check if it has a 'data' property that's an array
+            if ('data' in chartData && Array.isArray((chartData as any).data)) {
+                processedData = (chartData as any).data;
+            } else {
+                // Try to convert object entries to array format
+                processedData = Object.entries(chartData).map(([key, value]) => ({
+                    label: key,
+                    value: value
+                }));
+            }
+        } else {
+            console.error("ChartRenderer Error: Invalid chart data format", chartData);
+            return <p className="text-red-600 text-sm p-4 bg-red-50 rounded-lg">Unable to render chart: Invalid data format</p>;
+        }
     }
 
-    if (chartData && chartData.length > 0) {
-        const firstItem = chartData[0];
+    if (processedData && processedData.length > 0) {
+        const firstItem = processedData[0];
         const keys = Object.keys(firstItem);
 
         const xKeyExists = Object.prototype.hasOwnProperty.call(firstItem, xKey);
@@ -71,7 +89,7 @@ export default function ChartRenderer({ data }: { data: ChartData }) {
         switch (type) {
             case "bar":
                 return (
-                    <BarChart data={chartData}>
+                    <BarChart data={processedData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
                         <XAxis
                             dataKey={xKey}
@@ -96,7 +114,7 @@ export default function ChartRenderer({ data }: { data: ChartData }) {
                             radius={[6, 6, 0, 0]}
                             animationDuration={1500}
                         >
-                            {chartData.map((entry: any, index: number) => (
+                            {processedData.map((entry: any, index: number) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Bar>
@@ -104,7 +122,7 @@ export default function ChartRenderer({ data }: { data: ChartData }) {
                 );
             case "line":
                 return (
-                    <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <LineChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" vertical={false} />
                         <XAxis dataKey={xKey} stroke="#6B7280" tick={{ fill: '#9CA3AF', fontSize: 12 }} tickLine={false} axisLine={{ stroke: '#1E293B' }} />
                         <YAxis stroke="#6B7280" tick={{ fill: '#9CA3AF', fontSize: 12 }} tickLine={false} axisLine={false} />
@@ -133,7 +151,7 @@ export default function ChartRenderer({ data }: { data: ChartData }) {
                 return (
                     <PieChart>
                         <Pie
-                            data={chartData}
+                            data={processedData}
                             cx="50%"
                             cy="50%"
                             labelLine={false}

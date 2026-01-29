@@ -1,21 +1,20 @@
 import axios from 'axios';
+import { getSessionId } from './session';
 
 const api = axios.create({
-    baseURL: 'https://sage-unrocky-cursively.ngrok-free.dev', // Hardcoded Ngrok URL
+    baseURL: 'http://localhost:8005',
     headers: {
         'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true', // Required to bypass Ngrok warning
     },
 });
 
-// Add Request Interceptor to inject Token
+// Add Request Interceptor to inject Session ID
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
+    const sessionId = getSessionId();
+    config.headers['X-Session-ID'] = sessionId;
     return config;
 });
+
 
 export const uploadFile = async (file: File) => {
     const formData = new FormData();

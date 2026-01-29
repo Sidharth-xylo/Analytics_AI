@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { uploadFile, connectUrl } from "@/lib/api";
-import { Upload, CheckCircle, AlertCircle, Loader2, Link as LinkIcon, FileSpreadsheet } from "lucide-react";
+import { Upload, CheckCircle, AlertCircle, Loader2, Link as LinkIcon, FileSpreadsheet, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -54,104 +54,163 @@ export default function DataConnect({ onConnect }: { onConnect: (data: any) => v
     };
 
     return (
-        <div className="w-full max-w-lg mx-auto bg-brand-card/40 backdrop-blur-xl rounded-[24px] shadow-2xl border border-brand-border p-6 md:p-8">
-            {/* Simple Top Navigation */}
-            <div className="flex justify-center gap-6 mb-8">
-                <button
-                    onClick={() => setActiveTab('file')}
-                    className={`pb-2 text-sm font-semibold transition-colors flex items-center gap-2 border-b-2 ${activeTab === 'file'
-                        ? 'border-brand-primary text-brand-primary'
-                        : 'border-transparent text-gray-800 hover:text-black'
-                        }`}
-                >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    Upload File
-                </button>
-                <button
-                    onClick={() => setActiveTab('url')}
-                    className={`pb-2 text-sm font-semibold transition-colors flex items-center gap-2 border-b-2 ${activeTab === 'url'
-                        ? 'border-brand-secondary text-brand-secondary'
-                        : 'border-transparent text-gray-800 hover:text-black'
-                        }`}
-                >
-                    <LinkIcon className="w-4 h-4" />
-                    Google Sheets
-                </button>
-            </div>
+        <div className="w-full max-w-2xl mx-auto">
+            {/* Main Card */}
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-card-hover border border-slate-200/60 overflow-hidden">
+                {/* Header */}
+                <div className="px-8 pt-8 pb-6 border-b border-slate-100">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-ai flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-white" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-900">Connect Your Data</h2>
+                    </div>
+                    <p className="text-sm text-slate-600 ml-13">Upload a file or connect to Google Sheets to get started</p>
+                </div>
 
-            <div className="min-h-[220px] flex flex-col justify-center">
-                <AnimatePresence mode="wait">
-                    {activeTab === 'file' ? (
-                        <motion.div
-                            key="file"
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            className="flex flex-col items-center text-center w-full"
+                {/* Tab Switcher */}
+                <div className="px-8 pt-6 pb-4">
+                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                        <button
+                            onClick={() => setActiveTab('file')}
+                            className={`flex-1 py-3 px-4 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'file'
+                                ? 'bg-white text-brand-primary shadow-sm'
+                                : 'text-slate-600 hover:text-slate-900'
+                                }`}
                         >
-                            <label className="w-full h-48 border-2 border-dashed border-brand-border hover:border-brand-primary/50 bg-brand-panel/50 hover:bg-brand-panel rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all group">
-                                <div className="mb-3 bg-white shadow-sm p-3 rounded-xl group-hover:scale-110 transition-transform">
+                            <FileSpreadsheet className="w-4 h-4" />
+                            Upload File
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('url')}
+                            className={`flex-1 py-3 px-4 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${activeTab === 'url'
+                                ? 'bg-white text-brand-secondary shadow-sm'
+                                : 'text-slate-600 hover:text-slate-900'
+                                }`}
+                        >
+                            <LinkIcon className="w-4 h-4" />
+                            Google Sheets
+                        </button>
+                    </div>
+                </div>
+
+                {/* Content Area */}
+                <div className="px-8 pb-8 min-h-[280px] flex flex-col justify-center">
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'file' ? (
+                            <motion.div
+                                key="file"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                transition={{ duration: 0.2 }}
+                                className="w-full"
+                            >
+                                <label className="group block w-full h-56 border-2 border-dashed border-slate-200 hover:border-brand-primary/50 bg-slate-50/50 hover:bg-slate-50 rounded-2xl cursor-pointer transition-all duration-200 relative overflow-hidden">
+                                    {/* Gradient Accent on Hover */}
+                                    <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 to-brand-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                                    <div className="relative h-full flex flex-col items-center justify-center px-6 text-center">
+                                        <div className="mb-4 w-16 h-16 rounded-2xl bg-gradient-ai flex items-center justify-center group-hover:scale-110 transition-transform shadow-premium">
+                                            {loading ? (
+                                                <Loader2 className="w-7 h-7 text-white animate-spin" />
+                                            ) : (
+                                                <Upload className="w-7 h-7 text-white" />
+                                            )}
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                                            {loading ? 'Uploading...' : 'Drop your file here'}
+                                        </h3>
+                                        <p className="text-sm text-slate-500 mb-3">or click to browse</p>
+                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 text-xs text-slate-600">
+                                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                                            CSV, XLS, XLSX • Max 10MB
+                                        </div>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept=".csv, .xlsx, .xls"
+                                            onChange={handleFileChange}
+                                            disabled={loading}
+                                        />
+                                    </div>
+                                </label>
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="url"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2 }}
+                                className="w-full space-y-4"
+                            >
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">Google Sheets URL</label>
+                                    <div className="relative">
+                                        <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                                        <Input
+                                            placeholder="https://docs.google.com/spreadsheets/d/..."
+                                            className="h-12 pl-12 pr-4 bg-slate-50 border-slate-200 rounded-xl text-sm text-slate-900 focus:ring-2 focus:ring-brand-secondary/20 focus:border-brand-secondary transition-all"
+                                            value={url}
+                                            onChange={(e) => setInputUrl(e.target.value)}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-500 flex items-center gap-1">
+                                        <AlertCircle className="w-3 h-3" />
+                                        Make sure the sheet is publicly accessible or shared with view permissions
+                                    </p>
+                                </div>
+
+                                <Button
+                                    onClick={handleUrlConnect}
+                                    disabled={loading || !url}
+                                    className="w-full h-12 bg-gradient-secondary hover:opacity-90 text-white font-semibold rounded-xl shadow-premium hover:shadow-premium-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
                                     {loading ? (
-                                        <Loader2 className="w-6 h-6 text-brand-primary animate-spin" />
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Connecting...
+                                        </>
                                     ) : (
-                                        <Upload className="w-6 h-6 text-brand-primary" />
+                                        <>
+                                            <LinkIcon className="w-4 h-4" />
+                                            Connect Sheet
+                                        </>
                                     )}
-                                </div>
-                                <h3 className="font-semibold text-black">Click to Upload</h3>
-                                <p className="text-xs text-brand-text-muted mt-1">CSV or Excel (max 10MB)</p>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept=".csv, .xlsx, .xls"
-                                    onChange={handleFileChange}
-                                    disabled={loading}
-                                />
-                            </label>
-                        </motion.div>
-                    ) : (
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Status Messages */}
+                    {error && (
                         <motion.div
-                            key="url"
-                            initial={{ opacity: 0, y: 5 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            className="flex flex-col items-center text-center w-full"
+                            className="mt-4 flex items-center gap-2 text-rose-600 text-sm bg-rose-50 p-4 rounded-xl border border-rose-100"
                         >
-                            <div className="w-full flex flex-col gap-4">
-
-
-                                <div className="flex gap-2">
-                                    <Input
-                                        placeholder="Paste Google Sheet URL here..."
-                                        className="h-11 bg-brand-panel border-brand-border text-black rounded-xl"
-                                        value={url}
-                                        onChange={(e) => setInputUrl(e.target.value)}
-                                    />
-                                    <Button
-                                        onClick={handleUrlConnect}
-                                        disabled={loading || !url}
-                                        className="h-11 px-6 bg-brand-secondary hover:bg-brand-secondarySoft text-white font-semibold rounded-xl shadow-lg shadow-indigo-200"
-                                    >
-                                        Connect
-                                    </Button>
-                                </div>
-                            </div>
+                            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-medium">{error}</span>
                         </motion.div>
                     )}
-                </AnimatePresence>
-
-                {error && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex items-center justify-center gap-2 text-rose-500 text-sm bg-rose-50 p-3 rounded-xl border border-rose-100 font-medium w-full">
-                        <AlertCircle className="w-4 h-4" />
-                        {error}
-                    </motion.div>
-                )}
-                {success && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 flex items-center justify-center gap-2 text-brand-primary text-sm bg-blue-50 p-3 rounded-xl border border-blue-100 font-medium w-full">
-                        <CheckCircle className="w-4 h-4" />
-                        {success}
-                    </motion.div>
-                )}
+                    {success && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-4 flex items-center gap-2 text-emerald-600 text-sm bg-emerald-50 p-4 rounded-xl border border-emerald-100"
+                        >
+                            <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                            <span className="font-medium">{success}</span>
+                        </motion.div>
+                    )}
+                </div>
             </div>
+
+            {/* Help Text */}
+            <p className="text-center text-sm text-slate-500 mt-4">
+                Your data is processed securely and never stored permanently
+            </p>
         </div>
     );
 }
